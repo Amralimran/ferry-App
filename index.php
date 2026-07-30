@@ -13,7 +13,7 @@
         
         /* Side-by-side Header Row */
         .header-row { display: flex; gap: 20px; margin-top: 15px; margin-bottom: 5px; }
-        .header-row h4 { flex: 1; margin: 0; font-size: 1rem; color: #bbb; padding-bottom: 5px; border-bottom: 1px solid #444; }
+        .header-row h4 { flex: 1; margin: 0; font-size: 3svmin; color: #bbb; padding-bottom: 5px; border-bottom: 1px solid #444; }
 
         /* Split Screen Container */
         .split-container { display: flex; gap: 20px; }
