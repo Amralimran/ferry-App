@@ -55,7 +55,7 @@
 
         /* Weather List Styling */
         .weather-list { list-style: none; padding: 0; margin: 0; }
-        .weather-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; margin: 4px 0; border-radius: 4px; background: #2c2c2c; font-size: 0.9em; }
+        .weather-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; margin: 4px 0; border-radius: 4px; background: #2c2c2c; font-size: 0.7em; }
         .highlight-weather { background: #0056b3 !important; font-weight: bold; }
     </style>
 </head>
