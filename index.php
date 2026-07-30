@@ -11,13 +11,17 @@
         .header { display: flex; justify-content: space-between; align-items: center; font-size: 4svmin; background: #474747; padding: 20px; width: 90vw; border-radius: 2svmin; box-shadow: 0 2px 4px rgba(254, 252, 252, 0.1); }
         .card { background: #464646; margin-top: 20px; padding: 20px; width: 90vw; border-radius: 2svmin; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         
-        /* Side-by-side Header Row */
-        .header-row { display: flex; gap: 20px; margin-top: 15px; margin-bottom: 5px; }
-        .header-row h4 { flex: 1; margin: 0; font-size: 3svmin; color: #bbb; padding-bottom: 5px; border-bottom: 1px solid #444; }
-
-        /* Split Screen Container */
+        /* Split Screen Container: 1/3 Schedule, 2/3 Weather */
         .split-container { display: flex; gap: 20px; }
-        .split-pane { flex: 1; background: #333; padding: 15px; border-radius: 1.5svmin; max-height: 40vh; overflow-y: auto; }
+        .split-pane { background: #333; padding: 15px; border-radius: 1.5svmin; max-height: 40vh; overflow-y: auto; }
+        .split-pane:first-child { flex: 1; }  /* Left column: 1 part */
+        .split-pane:last-child { flex: 2; }   /* Right column: 2 parts (Total 1:2 ratio) */
+
+        /* Side-by-side Header Row matching the 1:2 ratio */
+        .header-row { display: flex; gap: 20px; margin-top: 15px; margin-bottom: 5px; }
+        .header-row h4 { margin: 0; font-size: 3svmin; color: #bbb; padding-bottom: 5px; border-bottom: 1px solid #444; }
+        .header-row h4:first-child { flex: 1; }
+        .header-row h4:last-child { flex: 2; }
         
         @media (max-width: 768px) {
             .split-container, .header-row { flex-direction: column; }
