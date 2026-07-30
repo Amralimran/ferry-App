@@ -1,7 +1,11 @@
 <?php
 header('Content-Type: application/json');
 
-$pier = $_GET['pier'] ?? 'Central';
+// Safely normalize the pier parameter (trim whitespace and match case correctly)
+$rawPier = $_GET['pier'] ?? 'Central';
+$pier = (strcasecmp(trim($rawPier), 'Mui Wo') === 0) ? 'Mui Wo' : 'Central';
+$filePrefix = ($pier === 'Mui Wo') ? 'muiwo' : 'central';
+
 $isHolidayToggle = filter_var($_GET['holiday'] ?? false, FILTER_VALIDATE_BOOLEAN);
 
 $dayOfWeek = (int)date('w'); // 0 = Sunday, 6 = Saturday, 1-5 = Weekdays
@@ -9,32 +13,45 @@ $isSunday = ($dayOfWeek === 0);
 $isSaturday = ($dayOfWeek === 6);
 $scheduleType = ($isSunday || $isHolidayToggle) ? 'sunday' : 'weekday';
 
-$specialPath = __DIR__ . '/schedules/special.json';
-$useSpecial = false;
+// Check if global special override mode is active via special.tgl file
+$isSpecialMode = file_exists(__DIR__ . '/schedules/special.tgl');
 $newsContent = "";
 $rawSchedules = [];
 
-// Check if special.json exists and read content
-if (file_exists($specialPath)) {
-    $specialData = json_decode(file_get_contents($specialPath), true);
-    if (is_array($specialData) && count($specialData) > 0) {
-        // Check the first element for the boolean flag
-        if ($specialData[0] === true) {
-            $useSpecial = true;
-            // The second element is the news text, everything after is the schedule
-            $newsContent = $specialData[1] ?? "";
-            $rawSchedules = array_slice($specialData, 2);
+if ($isSpecialMode) {
+    // 1. Load pier-specific special JSON file (e.g., central_special.json or muiwo_special.json)
+    $specialPath = __DIR__ . '/schedules/' . $filePrefix . '_special.json';
+    if (file_exists($specialPath)) {
+        $specialData = json_decode(file_get_contents($specialPath), true);
+        if (is_array($specialData)) {
+            $rawSchedules = $specialData;
         }
     }
-}
 
-// Fallback to standard unified JSON files if special mode is off or file doesn't exist
-if (!$useSpecial) {
+    // 2. Load independent news message from news.json
+    $newsPath = __DIR__ . '/schedules/news.json';
+    if (file_exists($newsPath)) {
+        $newsData = json_decode(file_get_contents($newsPath), true);
+        if (is_array($newsData) && isset($newsData['message'])) {
+            $newsContent = $newsData['message'];
+        }
+    }
+} else {
+    // Fallback to standard unified JSON files
     $fileName = ($pier === 'Central') ? 'central.json' : 'muiwo.json';
     $filePath = __DIR__ . '/schedules/' . $fileName;
     
     if (file_exists($filePath)) {
-        $rawSchedules = json_decode(file_get_contents($filePath), true);
+        $fileData = json_decode(file_get_contents($filePath), true);
+        if (is_array($fileData)) {
+            // Optional support for news header inside standard files if needed
+            if (isset($fileData[0]) && ($fileData[0] === true || $fileData[0] === 'true' || $fileData[0] === 1)) {
+                $newsContent = $fileData[1] ?? "";
+                $rawSchedules = array_slice($fileData, 2);
+            } else {
+                $rawSchedules = $fileData;
+            }
+        }
     } else {
         // Fallback to legacy naming if needed
         $legacyName = '';
@@ -55,15 +72,13 @@ if (!is_array($rawSchedules) || empty($rawSchedules)) {
     exit;
 }
 
-// Get today's lowercase English day name (e.g., 'monday', 'tuesday', 'wednesday', etc.)
 $currentDayName = strtolower(date('l')); 
-$isHolidayToggle = filter_var($_GET['holiday'] ?? false, FILTER_VALIDATE_BOOLEAN);
 
 $cleanedSchedules = [];
 foreach ($rawSchedules as $timeStr) {
+    if (!is_string($timeStr)) continue;
     $timeStrLower = strtolower($timeStr);
 
-    // List of all possible day tags to look out for
     $daysOfWeek = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
     
     $matchedDayTag = null;
@@ -74,20 +89,21 @@ foreach ($rawSchedules as $timeStr) {
         }
     }
 
-    // Filtering logic:
-    if ($isHolidayToggle) {
-        // If public holiday mode is on, treat it like Sunday (drop any specific day tags unless it's explicitly sunday)
-        if ($matchedDayTag && $matchedDayTag !== 'sunday') {
+    // Strict Filtering Logic:
+    if ($isSpecialMode || $isHolidayToggle) {
+        // If Special Mode or Public Holiday is active, ONLY include rows explicitly tagged with 'sunday' 
+        // (or if your list relies on separate files, skip any rows tagged for other weekdays).
+        if ($matchedDayTag !== 'sunday') {
             continue;
         }
     } else {
-        // If a specific day tag is found (e.g., 'tuesday'), ONLY include it if today matches that exact day
+        // Regular weekday mode: if a row has a specific day tag, it must match today. 
+        // If it has no day tag, it's a general daily ferry time and gets included.
         if ($matchedDayTag !== null && $matchedDayTag !== $currentDayName) {
             continue;
         }
     }
 
-    // Clean the time string to HH:MM format
     $cleanTime = preg_replace('/[^0-9:]/', '', $timeStr);
     if (strlen($cleanTime) >= 4) {
         $cleanedSchedules[] = substr($cleanTime, 0, 5);
@@ -101,9 +117,9 @@ $currentTime = new DateTime();
 $nextFerryIndex = -1;
 $targetDateTime = null;
 
-// Find the next upcoming ferry today
 foreach ($cleanedSchedules as $index => $timeStr) {
     $departureDateTime = DateTime::createFromFormat('H:i', $timeStr);
+    if (!$departureDateTime) continue;
     $departureDateTime->setDate((int)$currentTime->format('Y'), (int)$currentTime->format('m'), (int)$currentTime->format('d'));
     
     if ($departureDateTime > $currentTime) {
@@ -113,7 +129,6 @@ foreach ($cleanedSchedules as $index => $timeStr) {
     }
 }
 
-// Roll over to tomorrow's first ferry if no more ferries are left today
 if ($nextFerryIndex === -1 && !empty($cleanedSchedules)) {
     $nextFerryIndex = 0;
     $timeStr = $cleanedSchedules[0];
@@ -124,7 +139,7 @@ if ($nextFerryIndex === -1 && !empty($cleanedSchedules)) {
 
 echo json_encode([
     'pier' => $pier,
-    'schedule_type' => $scheduleType,
+    'schedule_type' => $isSpecialMode ? 'special' : $scheduleType,
     'news' => trim($newsContent),
     'next_index' => $nextFerryIndex,
     'target_timestamp' => $targetDateTime ? $targetDateTime->getTimestamp() : null,
