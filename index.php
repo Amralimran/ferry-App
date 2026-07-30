@@ -8,8 +8,8 @@
     <title>Ferry Schedule App</title>
     <style>
         body { font-family: sans-serif; font-size: 4svmin; padding: 20px; display: flex; flex-direction: column; align-items: center; background: #000000; color: #f7f4f4; }
-        .header { display: flex; justify-content: space-between; align-items: center; font-size: 4svmin; background: #474747; padding: 20px; width: 80vw; border-radius: 2svmin; box-shadow: 0 2px 4px rgba(254, 252, 252, 0.1); }
-        .card { background: #464646; margin-top: 20px; padding: 20px; width: 80vw; border-radius: 2svmin; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .header { display: flex; justify-content: space-between; align-items: center; font-size: 4svmin; background: #474747; padding: 20px; width: 90vw; border-radius: 2svmin; box-shadow: 0 2px 4px rgba(254, 252, 252, 0.1); }
+        .card { background: #464646; margin-top: 20px; padding: 20px; width: 90vw; border-radius: 2svmin; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         
         /* Side-by-side Header Row */
         .header-row { display: flex; gap: 20px; margin-top: 15px; margin-bottom: 5px; }
