@@ -5,7 +5,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     // Handle toggle creation / deletion
     if (isset($input['toggle_special'])) {
-        $tglPath = __DIR__ . '/special.tgl';
+        $tglPath = __DIR__ . '/schedules/special.tgl';
         if ($input['toggle_special'] === true) {
             file_put_contents($tglPath, '1'); // Creates special.tgl
         } else {
@@ -16,10 +16,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         echo json_encode(['status' => 'success']);
         exit;
     }
-    // ... rest of json file saving logic ...
+
+    // Handle saving schedule JSON files
+    if (isset($input['filename']) && isset($input['data'])) {
+        $filename = basename($input['filename']); // Sanitize filename
+        $filePath = __DIR__ . '/' . $filename . '.json';
+        
+        $jsonData = json_encode($input['data'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+        
+        if (file_put_contents($filePath, $jsonData) !== false) {
+            echo json_encode(['status' => 'success']);
+        } else {
+            echo json_encode(['status' => 'error', 'message' => 'Failed to write file']);
+        }
+        exit;
+    }
 }
 
-$isSpecialActive = file_exists(__DIR__ . '/special.tgl');
+$isSpecialActive = file_exists(__DIR__ . '/schedules/special.tgl');
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -111,9 +125,10 @@ $isSpecialActive = file_exists(__DIR__ . '/special.tgl');
     </div>
 
     <!-- Action Buttons -->
-    <div style="margin-left: auto; display: flex; gap: 10px;">
+    <div style="margin-left: auto; display: flex; gap: 10px; align-items: center;">
         <button onclick="addRow()" style="padding: 6px 12px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">+ Add Entry</button>
-        <button onclick="saveJSONFile()" style="padding: 6px 12px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">Save to Server</button>
+        <button onclick="saveToServer()" style="padding: 6px 12px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">Save to Server</button>
+        <span id="statusMessage"></span>
     </div>
 </div>
 
@@ -150,6 +165,7 @@ $isSpecialActive = file_exists(__DIR__ . '/special.tgl');
                 ],
             });
         }
+
         async function applySpecialToggle() {
             const isActive = document.getElementById('globalToggle').checked;
             try {
@@ -172,7 +188,6 @@ $isSpecialActive = file_exists(__DIR__ . '/special.tgl');
         async function loadJSONFile(filename) {
             currentFilename = filename;
             try {
-                // Add timestamp query parameter to bypass browser caching
                 const response = await fetch(`${filename}.json?t=${new Date().getTime()}`);
                 const dataArray = await response.json();
                 
