@@ -181,18 +181,20 @@ function fetchSchedule(pier) {
     document.getElementById('btnMuiWo').classList.toggle('active', pier === 'Mui Wo');
 
     fetch(`get_schedule.php?pier=${encodeURIComponent(pier)}&holiday=${isHolidayActive ? 1 : 0}`)
+    
         .then(response => response.json())
         .then(data => {
             document.getElementById('scheduleCard').style.display = 'block';
             document.getElementById('pierTitle').innerText = `Departing from: ${data.pier}`;
             
+            // Inside your fetch / update function:
             const newsBanner = document.getElementById('newsBanner');
+
             if (data.news && data.news.trim() !== "") {
-                newsBanner.style.display = 'block';
-                document.getElementById('newsText').innerText = data.news;
-                document.getElementById('modalFullText').innerText = data.news;
+                newsBanner.innerText = data.news;
+                newsBanner.style.display = 'block'; // Make sure it shows up!
             } else {
-                newsBanner.style.display = 'none';
+                newsBanner.style.display = 'none';  // Hide it if there's no news
             }
 
             targetTimestamp = data.target_timestamp;
@@ -349,7 +351,7 @@ window.onload = initApp;
 <script>
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
+        navigator.serviceWorker.register('/sw2.js')
             .then(reg => console.log('Service Worker registered!', reg))
             .catch(err => console.log('Service Worker registration failed:', err));
     });
