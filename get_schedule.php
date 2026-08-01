@@ -77,7 +77,7 @@ $currentDayName = strtolower(date('l'));
 $cleanedSchedules = [];
 foreach ($rawSchedules as $timeStr) {
     if (!is_string($timeStr)) continue;
-    $timeStrLower = strtolower($timeStr);
+    $timeStrLower = strtolower(trim($timeStr));
 
     $daysOfWeek = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
     
@@ -89,24 +89,25 @@ foreach ($rawSchedules as $timeStr) {
         }
     }
 
-    // Strict Filtering Logic:
-    if ($isSpecialMode || $isHolidayToggle) {
-        // If Special Mode or Public Holiday is active, ONLY include rows explicitly tagged with 'sunday' 
-        // (or if your list relies on separate files, skip any rows tagged for other weekdays).
+    // Strict Mode Filtering:
+    if ($isSpecialMode || $isHolidayToggle || $isSunday) {
+        // On Sundays/Holidays/Special Mode, ONLY allow entries explicitly tagged with 'sunday'.
+        // This drops all generic non-suffixed times and other day tags entirely.
         if ($matchedDayTag !== 'sunday') {
             continue;
         }
     } else {
-        // Regular weekday mode: if a row has a specific day tag, it must match today. 
-        // If it has no day tag, it's a general daily ferry time and gets included.
+        // On regular weekdays/saturdays:
+        // - Skip entries belonging to other days (e.g. 'sunday', 'monday')
+        // - Allow generic times (no tag) and times matching today's day tag
         if ($matchedDayTag !== null && $matchedDayTag !== $currentDayName) {
             continue;
         }
     }
 
-    $cleanTime = preg_replace('/[^0-9:]/', '', $timeStr);
-    if (strlen($cleanTime) >= 4) {
-        $cleanedSchedules[] = substr($cleanTime, 0, 5);
+    // Extract just the HH:MM part cleanly
+    if (preg_match('/(\d{1,2}:\d{2})/', $timeStr, $matches)) {
+        $cleanedSchedules[] = str_pad($matches[1], 5, '0', STR_PAD_LEFT);
     }
 }
 
